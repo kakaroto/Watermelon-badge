@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+
+# CadQuery / export artifacts
+output/
+*.stl
+*.step
+*.brep
+*.3mf
+*.obj
+
+# OS files
+.DS_Store
+Thumbs.db
