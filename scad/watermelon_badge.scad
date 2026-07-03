@@ -1,11 +1,6 @@
-// OpenSCAD recreation of the watermelon badge geometry.
-// Render this file in OpenSCAD to export an STL matching the generated badge shape.
-
-include <teardrop.scad>;
-
+// Parameters 
 $fn = 96;
 
-// Parameters 
 
 // Diameters
 badge_diameter = 62.50;
@@ -16,6 +11,7 @@ red_diameter = white_diameter - surface_layer_thickness;
 badge_radius = badge_diameter / 2.0;
 white_rind_radius = white_diameter / 2.0;
 red_flesh_radius = red_diameter / 2.0;
+
 // Layer heights requested for the badge body
 green_base_height = 4.5;
 white_rind_height = 0.5;
@@ -35,28 +31,17 @@ seed_skip_angles = [0, 180];
 
 
 // Text parameters
-rind_width = 3.5;
-white_ring_width = 3.0;
-text_depth = 0.8;
+text_depth = seed_height;
 text_radius_factor = seed_outer_radius_factor;
 text_to_display = "PALESTINE";
 
-pin_diameter = 2.2;
-clearance = 0.15;
-channel_width = 2.6;
-pin_entry_radius_extra = 0.35;
-pin_exit_radius_extra = 0.35;
-pin_center_radius_extra = 0.15;
-pin_retention_length = 2.2;
-retention_bump_diameter = 0.45;
-retention_bump_count = 4;
-
-reinforcement_thickness = 1.2;
-reinforcement_width = 2.4;
-
-
-pin_radius = (pin_diameter / 2.0) + clearance;
-retention_radius = (channel_width / 2.0) + clearance;
+// Pin Parameters
+pin_rect_length = 15.0;
+pin_rect_width = 5.0;
+pin_corner_radius = 2;
+pin_channel_width = 1.2;
+pin_channel_depth = 3.5;
+pin_edge_gap = 4.0;
 
 // Build the green base with rounded edges, not a tapered profile.
 module build_rounded_base() {
@@ -100,6 +85,21 @@ module center_text_upper(text_str) {
     }
 }
 
+module teardrop(length, width, height, rounding) {
+    $fn = 96;
+
+    linear_extrude(height = height) {
+        offset(r = rounding) {
+            hull() {
+                translate([-length / 2.0 + width * 0.25, 0]) circle(r = width * 0.28);
+                translate([length / 2.0 - width * 0.18, 0]) circle(r = width * 0.12);
+                translate([length / 2.0 - width * 0.02, 0]) circle(r = width * 0.02);
+            }
+        }
+    }
+}
+
+
 module build_seeds() {
     seed_z = green_base_height + white_rind_height + red_flesh_height;
 
@@ -138,16 +138,8 @@ module build_seeds() {
 }
 
 module build_pin_channel() {
-    rect_length = 15.0;
-    rect_width = 5.0;
-    corner_radius = 2;
-    channel_width = 1.2;
-    channel_depth = 3.5;
-    edge_gap = 4.0;
-    center_x = 0.0;
-    center_y = 0.0;
-    left_x = -badge_radius + edge_gap + rect_length / 2.0;
-    right_x = badge_radius - edge_gap - rect_length / 2.0;
+    left_x = -badge_radius + pin_edge_gap + pin_rect_length / 2.0;
+    right_x = badge_radius - pin_edge_gap - pin_rect_length / 2.0;
 
     module rounded_rect2d(w, h, r) {
         offset(r = r) {
@@ -156,21 +148,17 @@ module build_pin_channel() {
     }
 
     union() {
-        translate([0, center_y, 0]) {
-            linear_extrude(height = channel_depth, center = false, convexity = 10) {
-                translate([left_x, 0, 0]) {
-                    rounded_rect2d(rect_length, rect_width, corner_radius);
-                }
-                translate([right_x, 0, 0]) {
-                    rounded_rect2d(rect_length, rect_width, corner_radius);
-                }
+        linear_extrude(height = pin_channel_depth, center = false, convexity = 10) {
+            translate([left_x, 0, 0]) {
+                rounded_rect2d(pin_rect_length, pin_rect_width, pin_corner_radius);
+            }
+            translate([right_x, 0, 0]) {
+                rounded_rect2d(pin_rect_length, pin_rect_width, pin_corner_radius);
             }
         }
-        translate([0, center_y, channel_depth - channel_width]) {
-            linear_extrude(height = channel_width, center = false, convexity = 10) {
-                translate([center_x, 0, 0]) {
-                    square([rect_length * 2 + 8.0, channel_width], center = true);
-                }
+        translate([0, 0, pin_channel_depth - pin_channel_width]) {
+            linear_extrude(height = pin_channel_width, center = false, convexity = 10) {
+                square([pin_rect_length * 2 + 8.0, pin_channel_width], center = true);
             }
         }
     }
