@@ -6,26 +6,25 @@ include <teardrop.scad>;
 $fn = 96;
 
 // Parameters matching src/parameters.py.
-badge_diameter = 50.0;
-badge_thickness = 6.0;
-dome_height = 0.35;
-edge_radius = 0.8;
+badge_diameter = 62.50;
+dome_height = 0.3;
+edge_radius = 3.2;
 shell_thickness = 1.2;
 shell_cut_depth = 0.35;
 
-rind_width = 10.0;
-white_ring_width = 8.0;
+rind_width = 3.5;
+white_ring_width = 3.0;
 flesh_wall_thickness = 1.4;
 flesh_height = 1.6;
 
-seed_count_outer = 12;
-seed_count_inner = 8;
+seed_count_outer = 24;
+seed_count_inner = 16;
 seed_length = 2.0;
 seed_width = 1.5;
 seed_height = 0.8;
-seed_protrusion = 0.4;
-seed_outer_radius_factor = 0.55;
-seed_inner_radius_factor = 0.3;
+seed_protrusion = 1.0;
+seed_outer_radius_factor = 0.7;
+seed_inner_radius_factor = 0.5;
 seed_rounding = 0.25;
 
 pin_diameter = 2.2;
@@ -42,54 +41,76 @@ reinforcement_thickness = 1.2;
 reinforcement_width = 2.4;
 
 badge_radius = badge_diameter / 2.0;
-rind_inner_radius = badge_radius - rind_width;
-white_inner_radius = rind_inner_radius - white_ring_width;
-flesh_radius = white_inner_radius;
+
+// Layer heights requested for the badge body.
+green_base_height = 4.5;
+white_rind_offset = 0.5;
+white_rind_height = 0.5;
+red_flesh_offset = 0.5;
+red_flesh_height = 0.5;
+badge_thickness = green_base_height + white_rind_offset + white_rind_height + red_flesh_offset + red_flesh_height;
+
 pin_radius = (pin_diameter / 2.0) + clearance;
 retention_radius = (channel_width / 2.0) + clearance;
 
-// using teardrop module from teardrop.scad
+// Build the green base with rounded edges, not a tapered profile.
+module build_rounded_base() {
+    rounded_edge_radius = min(edge_radius, green_base_height / 2.0);
+    base_height = max(green_base_height - (rounded_edge_radius * 2), 0.01);
+    color([0,1,0]) 
+    translate([0, 0, rounded_edge_radius]) {
+        minkowski() {
+            cylinder(h = base_height, r = max(badge_radius - rounded_edge_radius, 0.01));
+            sphere(r = rounded_edge_radius);
+        }
+    }
+}
 
-module build_dome() {
-    difference() {
-        union() {
-            cylinder(h = badge_thickness, r = badge_radius);
-            translate([0, 0, badge_thickness - dome_height]) {
-                cylinder(h = dome_height, r = max(badge_radius - edge_radius * 0.5, 0.1));
+module build_surface_layers() {
+    white_diameter = badge_diameter - 6.0;
+    red_diameter = white_diameter - 7.0;
+    white_radius = white_diameter / 2.0;
+    red_radius = red_diameter / 2.0;
+
+    color([1,1,1]) 
+    translate([0, 0, green_base_height + white_rind_offset]) {
+        cylinder(h = white_rind_height, r = white_radius);
+    }
+
+    color([1,0,0])
+    translate([0, 0, green_base_height + white_rind_offset + white_rind_height + red_flesh_offset]) {
+        cylinder(h = red_flesh_height, r = red_radius);
+    }
+}
+
+// center text sizing and placement
+module center_text_upper(text_str) {
+    target_width = (badge_radius - white_ring_width - rind_width) * 2 * 0.95;
+    text_depth = 0.8;
+    zpos = badge_thickness - text_depth - 0.1;
+    translate([0, 0, zpos]) {
+        linear_extrude(height = text_depth) {
+            resize([target_width, 999, 0]) {
+                text(text_str, font = "Arial:style=Bold", halign = "center", valign = "center");
             }
         }
-
-        translate([0, 0, shell_thickness]) {
-            cylinder(h = badge_thickness, r = max(badge_radius - shell_thickness, 0.1));
-        }
-
-        translate([0, 0, badge_thickness - shell_cut_depth]) {
-            cylinder(h = shell_cut_depth + 0.01, r = max(badge_radius - edge_radius, 0.1));
-        }
     }
-}
-
-module build_rind() {
-    difference() {
-        cylinder(h = badge_thickness - 0.8, r = badge_radius - 0.8);
-        translate([0, 0, 0.4]) {
-            cylinder(h = badge_thickness, r = max(rind_inner_radius, 0.1));
-        }
-    }
-}
-
-module build_flesh() {
-    cylinder(h = max(badge_thickness - flesh_height, 0.1), r = max(flesh_radius - flesh_wall_thickness, 0.1));
 }
 
 module build_seeds() {
+    red_top_z = green_base_height + white_rind_offset + white_rind_height + red_flesh_offset + red_flesh_height;
+    seed_z = red_top_z + seed_protrusion - seed_height;
+
+    color([0,0,0])
     union() {
         for (i = [0 : seed_count_outer - 1]) {
             angle = 360 * i / seed_count_outer;
             x = (badge_radius * seed_outer_radius_factor) * cos(angle);
             y = (badge_radius * seed_outer_radius_factor) * sin(angle);
-            translate([x, y, badge_thickness - seed_height - seed_protrusion]) {
-                teardrop(seed_length, seed_width, seed_height, seed_rounding);
+            translate([x, y, seed_z]) {
+                rotate([0, 0, angle + 180]) {
+                    teardrop(seed_length, seed_width, seed_height, seed_rounding);
+                }
             }
         }
 
@@ -97,8 +118,10 @@ module build_seeds() {
             angle = 360 * i / seed_count_inner;
             x = (badge_radius * seed_inner_radius_factor) * cos(angle);
             y = (badge_radius * seed_inner_radius_factor) * sin(angle);
-            translate([x, y, badge_thickness - seed_height - seed_protrusion]) {
-                teardrop(seed_length, seed_width, seed_height, seed_rounding);
+            translate([x, y, seed_z]) {
+                rotate([0, 0, angle + 180]) {
+                    teardrop(seed_length, seed_width, seed_height, seed_rounding);
+                }
             }
         }
     }
@@ -144,16 +167,19 @@ module build_reinforcement() {
 }
 
 module build_badge() {
-    difference() {
-        union() {
-            build_dome();
-            build_rind();
-            build_flesh();
-            build_seeds();
+    union() {
+        difference() {
+            union() {
+                build_rounded_base();
+                build_surface_layers();
+                build_seeds();
+            }
+           # build_pin_channel();
         }
-        build_pin_channel();
+
+        build_reinforcement();
+        // center_text_upper("PALESTINE");
     }
-    build_reinforcement();
 }
 
 build_badge();
