@@ -1,10 +1,10 @@
 // Parameters 
-$fn = 96;
+$fn = 200;
 
 
 // Diameters
-badge_diameter = 62.50;
-edge_radius = 1.0;
+badge_diameter = 61.75;
+edge_radius = 1.5;
 surface_layer_thickness = 6.0;
 white_diameter = badge_diameter - surface_layer_thickness;
 red_diameter = white_diameter - surface_layer_thickness;
@@ -21,12 +21,12 @@ badge_thickness = green_base_height + white_rind_height + red_flesh_height;
 // Seed parameters
 seed_count_outer = 24;
 seed_count_inner = 16;
-seed_length = 2.0;
-seed_width = 1.5;
+seed_length = 3.5;
+seed_width = 2;
 seed_height = 0.75;
 seed_outer_radius_factor = 0.85;
 seed_inner_radius_factor = 0.6;
-seed_rounding = 0.25;
+seed_rounding = 0.5;
 seed_skip_angles = [0, 180];
 
 
@@ -38,10 +38,11 @@ text_to_display = "PALESTINE";
 // Pin Parameters
 pin_rect_length = 15.0;
 pin_rect_width = 5.0;
+pin_rect_edge_gap = 4.0;
 pin_corner_radius = 2;
-pin_channel_width = 1.2;
+pin_channel_width = 1.25;
+pin_channel_length = badge_diameter - 2 * pin_rect_edge_gap - 2 * pin_rect_length;
 pin_channel_depth = 3.5;
-pin_edge_gap = 4.0;
 
 // Build the green base with rounded edges, not a tapered profile.
 module build_rounded_base() {
@@ -60,9 +61,9 @@ module build_surface_layers() {
     white_radius = white_diameter / 2.0;
     red_radius = red_diameter / 2.0;
 
-    color([1,1,1]) 
-    translate([0, 0, green_base_height - 0.1]) {
-        cylinder(h = white_rind_height + 0.1, r = white_radius);
+    color([1,1,1])
+    translate([0, 0, pin_channel_depth]) {
+        cylinder(h = green_base_height - pin_channel_depth + white_rind_height, r = white_diameter / 2.0);
     }
 
     color([1,0,0])
@@ -91,9 +92,8 @@ module teardrop(length, width, height, rounding) {
     linear_extrude(height = height) {
         offset(r = rounding) {
             hull() {
-                translate([-length / 2.0 + width * 0.25, 0]) circle(r = width * 0.28);
-                translate([length / 2.0 - width * 0.18, 0]) circle(r = width * 0.12);
-                translate([length / 2.0 - width * 0.02, 0]) circle(r = width * 0.02);
+                translate([-length / 2.0 + rounding + width * 0.25, 0]) circle(r = width * 0.25);
+                translate([length / 2.0 - rounding - width * 0.02, 0]) circle(r = width * 0.02);
             }
         }
     }
@@ -138,8 +138,9 @@ module build_seeds() {
 }
 
 module build_pin_channel() {
-    left_x = -badge_radius + pin_edge_gap + pin_rect_length / 2.0;
-    right_x = badge_radius - pin_edge_gap - pin_rect_length / 2.0;
+    left_x = -badge_radius + pin_rect_edge_gap + pin_rect_length / 2.0;
+    right_x = badge_radius - pin_rect_edge_gap - pin_rect_length / 2.0;
+    taper = 0.5;
 
     module rounded_rect2d(w, h, r) {
         offset(r = r) {
@@ -156,27 +157,44 @@ module build_pin_channel() {
                 rounded_rect2d(pin_rect_length, pin_rect_width, pin_corner_radius);
             }
         }
-        translate([0, 0, pin_channel_depth - pin_channel_width]) {
-            linear_extrude(height = pin_channel_width, center = false, convexity = 10) {
-                square([pin_rect_length * 2 + 8.0, pin_channel_width], center = true);
-            }
+       
+        union() {
+            translate([-pin_channel_length /2 - 0.1, -pin_channel_width /2, pin_channel_depth - pin_channel_width /2]) 
+            cube([pin_channel_length + 0.2, pin_channel_width, pin_channel_width /2]);
+        
+            translate([-pin_channel_length /2 - 0.1, 0, pin_channel_depth - pin_channel_width/2])
+            rotate([0, 90, 0])
+                cylinder(h = pin_channel_length + 0.2, r = pin_channel_width / 2.0);
         }
     }
 }
 
 module build_badge() {
     union() {
-        difference() {
-            union() {
-                build_rounded_base();
-                build_surface_layers();
-                build_seeds();
-            }
-            build_pin_channel();
-        }
+        build_bottom_part();
+        build_top_part();
+    }
+}
 
+module build_bottom_part() {
+    difference() {
+        build_rounded_base();
+        translate([0, 0, pin_channel_depth]) {
+            cylinder(h = green_base_height + white_rind_height - pin_channel_depth, r = white_diameter / 2.0);
+        }
+        build_pin_channel();
+    }
+}
+module build_top_part() {
+    union() {
+        build_surface_layers();
+        build_seeds();
         center_text_upper(text_to_display);
     }
 }
 
-build_badge();
+//build_badge();
+build_bottom_part();
+//build_top_part();
+
+//teardrop(seed_length, seed_width, seed_height, seed_rounding);

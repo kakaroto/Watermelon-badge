@@ -1,30 +1,7 @@
-# Watermelon Badge CadQuery Project
+# Watermelon Badge
 
-This project creates a simple enamel-style badge model suitable for multicolor 3D printing.
+This project creates a simple enamel-style badge 3d model suitable for multicolor 3D printing.
+The badge is of a watermelon with Palestine written on it.
 
-## Files
-- badge.py: CadQuery script that generates the badge parts
-- output/: generated STL and STEP files
-
-## Run
-From the project folder, run:
-
-```powershell
-./generate_badge.cmd
-```
-
-Or directly with Python:
-
-```powershell
-./.venv/Scripts/python.exe generate_badge.py
-```
-
-## Output
-The script exports:
-- badge_base.stl / badge_base.step
-- badge_enamel.stl / badge_enamel.step
-
-## Notes
-- The badge base is the structural part.
-- The enamel insert is a separate part intended for a different filament/color.
-- You can adjust the dimensions in badge.py for a different size or style.
+# Assembly
+The badge should be printed in 2 parts, first the green base, then the red, white and black top. A safety pin or locking pin should be inserted into the base, then the two pieces glued together with super glue.
