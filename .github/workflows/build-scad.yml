@@ -2,6 +2,8 @@ name: Build OpenSCAD models
 
 on:
   push:
+    branches:
+      - master
     paths:
       - 'scad/**'
       - '.github/workflows/build-scad.yml'
@@ -23,18 +25,22 @@ jobs:
         run: mkdir -p output
 
       - name: Build badge model
-        run: openscad -o output/watermelon_badge.3mf scad/watermelon_badge.scad
+        run: openscad -o output/watermelon_badge-54mm.3mf scad/watermelon_badge.scad
 
       - name: Build lock pin model
-        run: openscad -o output/watermelon_badge_lock.3mf scad/lock_pin.scad
+        run: openscad -o output/watermelon_badge_lock-29mm.3mf scad/lock_pin.scad
 
       - name: Publish 3MF files to latest release
-        uses: softprops/action-gh-release@v2
+        id: create_latest_release
+        uses: ncipollo/release-action@v1
         with:
-          tag_name: latest
+          allowUpdates: true
           name: Latest Build
           body: Latest generated 3MF artifacts for the watermelon badge.
-          files: |
+          artifacts: |
             output/*.3mf
-          fail_on_unmatched_files: true
           make_latest: true
+          draft: false
+          prerelease: false
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: latest
