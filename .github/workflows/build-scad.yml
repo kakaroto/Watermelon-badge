@@ -39,7 +39,6 @@ jobs:
           body: Latest generated 3MF artifacts for the watermelon badge.
           artifacts: |
             output/*.3mf
-          make_latest: true
           draft: false
           prerelease: false
           token: ${{ secrets.GITHUB_TOKEN }}
