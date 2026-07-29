@@ -8,6 +8,9 @@ on:
       - 'scad/**'
       - '.github/workflows/build-scad.yml'
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -28,18 +31,15 @@ jobs:
         run: openscad -o output/watermelon_badge-54mm.3mf scad/watermelon_badge.scad
 
       - name: Build lock pin model
-        run: openscad -o output/watermelon_badge_lock-29mm.3mf scad/lock_pin.scad
+        run: openscad -o output/watermelon_badge_lock-30mm.3mf scad/lock_pin.scad
 
       - name: Publish 3MF files to latest release
-        id: create_latest_release
-        uses: ncipollo/release-action@v1
+        uses: softprops/action-gh-release@v2
         with:
-          allowUpdates: true
+          tag_name: latest
           name: Latest Build
           body: Latest generated 3MF artifacts for the watermelon badge.
-          artifacts: |
+          files: |
             output/*.3mf
-          draft: false
-          prerelease: false
-          token: ${{ secrets.GITHUB_TOKEN }}
-          tag: latest
+          fail_on_unmatched_files: true
+          make_latest: true
